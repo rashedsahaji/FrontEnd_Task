@@ -8,7 +8,9 @@
 import Foundation
 class FetchDetails{
     static let shared = FetchDetails()
-    func fetchData(from urlString: String, method: String, completion: @escaping (ImageDetails) -> Void ){
+    func fetchData(from urlString: String, method: String, completion: @escaping (Result<ImageDetails, Error>) -> Void ){
+        
+        DispatchQueue.global(qos: .userInitiated).async {
             let url = URL(string: urlString)
 
             guard let requestURL = url else{return}
@@ -28,10 +30,9 @@ class FetchDetails{
                     print(error)
                 }
                 guard let output = result else { return }
-                print(output)
-                completion(output)
+                completion(.success(output))
             }
             dataTask.resume()
-        
+        }
     }
 }

@@ -20,14 +20,17 @@ class HomeVC: UIViewController, HomeViewController{
     override func viewDidLoad() {
         super.viewDidLoad()
         self.uiVC.setupTableView()
-        DispatchQueue.global(qos: .background).async {
-            RestManger.shared.fetchData(from: "https://picsum.photos/v2/list", method: "GET") { outout in
-                self.fetched = outout
-                DispatchQueue.main.async {
-                    self.tableView.reloadData()
-                    self.tableView.isHidden = false
+            RestManger.shared.fetchData(from: "https://picsum.photos/v2/list", method: "GET") { [weak self] outout in
+                switch outout {
+                case .success(let data):
+                    self?.fetched = data
+                    DispatchQueue.main.async {
+                        self?.tableView.reloadData()
+                        self?.tableView.isHidden = false
+                    }
+                case .failure(_):
+                    break
                 }
-            }
         }
     }
     

@@ -8,8 +8,13 @@
 import Foundation
 
 class RestManger{
+    var isPaginating = false
     static let shared = RestManger()
-    func fetchData(pagination:Bool = false, from urlString: String, method: String, completion: @escaping (MyResult) -> Void ){
+    func fetchData(pagination:Bool = false, from urlString: String, method: String, completion: @escaping (Result<MyResult, Error>) -> Void ){
+        if pagination{
+            isPaginating = true
+        }
+        DispatchQueue.global(qos: .background).async {
             let url = URL(string: urlString)
 
             guard let requestURL = url else{return}
@@ -29,8 +34,13 @@ class RestManger{
                     print(error)
                 }
                 guard let output = result else { return }
-                completion(output)
+                completion(.success(output))
+                if pagination{
+                    self.isPaginating = false
+                }
             }
             dataTask.resume()
         }
+        }
+
 }

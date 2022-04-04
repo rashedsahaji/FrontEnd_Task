@@ -30,14 +30,16 @@ class DetailsVC: UIViewController, DetailsViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        DispatchQueue.global(qos: .background).async {
             FetchDetails.shared.fetchData(from: "https://picsum.photos/id/\(self.id ?? "")/info", method: "GET") { output in
-                DispatchQueue.main.async {
-                    self.fetchedDetails = output
-                    self.setupDetails()
+                switch output{
+                case .success(let data):
+                    DispatchQueue.main.async {
+                        self.fetchedDetails = data
+                        self.setupDetails()
+                    }
+                case .failure(_):
+                    break
                 }
-            }
         }
     }
     

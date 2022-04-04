@@ -30,15 +30,21 @@ class HomeUIVC: NSObject, ObservableHomeUIVC{
 extension HomeUIVC: UITableViewDelegate{
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let position = scrollView.contentOffset.y
-        if position > ((view?.tableView.contentSize.height)!-100-scrollView.frame.size.height){
-            DispatchQueue.global(qos: .default).async {
-                RestManger.shared.fetchData(from: "https://picsum.photos/v2/list?page=2&limit=10", method: "GET") { [weak self] output in
-                    self?.view?.fetched?.append(contentsOf: output)
-                    DispatchQueue.main.async {
-                        self?.view?.tableView.reloadData()
+        if position > ((view?.tableView.contentSize.height)!-200-scrollView.frame.size.height){
+            
+            guard !RestManger.shared.isPaginating else {return}
+            
+            RestManger.shared.fetchData(pagination:true, from: "https://picsum.photos/v2/list?page=\(Int.random(in: 0...10))&limit=10", method: "GET") { [weak self] out in
+                    switch out{
+                    case .success(let moreData):
+                        self?.view?.fetched?.append(contentsOf: moreData)
+                        DispatchQueue.main.async {
+                            self?.view?.tableView.reloadData()
+                        }
+                    case .failure(_):
+                        break
                     }
                 }
-            }
         }
     }
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -66,24 +72,9 @@ extension HomeUIVC: UITableViewDataSource{
         
         guard let cell = tableView.dequeueReusableCell(withIdentifier: ImageTVC.indentifier) as? ImageTVC else {return UITableViewCell()}
         
-        cell.author.text = view?.fetched?[indexPath.row].author
-        
-        guard let url = URL(string: self.view?.fetched?[indexPath.row].downloadURL ?? "") else { return UITableViewCell()}
-        
-        if let cacheImage = self.imageCache.object(forKey: url as AnyObject){
-            cell.images.image = cacheImage
-        }
-        
-        DispatchQueue.global(qos: .background).async {
-            if let data = try? Data(contentsOf: url){
-                if let image = UIImage(data: data){
-                    DispatchQueue.main.async {
-                        self.imageCache.setObject(image, forKey: url as AnyObject)
-                        cell.images.image = image
-                    }
-                }
-            }
-        }
+        cell.author.text = self.view?.fetched?[indexPath.row].author
+        cell.downloadImage(url: self.view?.fetched?[indexPath.row].downloadURL ?? "")
+    
         return cell
     }
 }
